@@ -1,0 +1,354 @@
+{
+  "name": "Document Q&A Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Upload File to Gemini File Search",
+        "formFields": {
+          "values": [
+            {
+              "fieldName": "Upload_File",
+              "fieldLabel": "Upload_File",
+              "fieldType": "file",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.4,
+      "position": [
+        -16,
+        32
+      ],
+      "id": "d3ef8371-0af8-4955-8626-e6e078a943ba",
+      "name": "On form submission",
+      "webhookId": "366539f8-b4bb-4ac3-b188-0a34347b680d"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/fileSearchStores",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "conrent-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "displayName",
+              "value": "fluken8n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        -208
+      ],
+      "id": "dade9fcd-0dfa-442f-9dfb-bdd1b7110025",
+      "name": "Create File Search Store",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "3Cc0Erag5QFBs9vQ",
+          "name": "Query Auth Gemini File Search"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/upload/v1beta/files",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "Upload_File",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        32
+      ],
+      "id": "0a4609e9-5fdb-4a13-bea3-5cbd10bbbe53",
+      "name": "Upload File",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "3Cc0Erag5QFBs9vQ",
+          "name": "Query Auth Gemini File Search"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/fileSearchStores/fluken8n-mpjmuy7uz3vp:importFile",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file_name",
+              "value": "={{ $json.file.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        448,
+        32
+      ],
+      "id": "a7e4ee9a-2777-4f41-a421-80ed32fc6b87",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "3Cc0Erag5QFBs9vQ",
+          "name": "Query Auth Gemini File Search"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "คุณคือ RAG agent ที่คอยช่วยเหลือผู้ใช้งาน หน้าที่ของคุณคือการตอบคำถามโดยใช้เครื่องมือ DataFile ทุกครั้งเพื่อให้มั่นใจว่าทุกคำตอบของคุณนั้นถูกต้องและอิงตามข้อเท็จจริง และโปรดระบุแหล่งที่มาอ้างอิงจากชื่อไฟล์และเลขหน้าเมื่อคุณให้คำตอบทุกครั้ง\n\nเมื่อคุณส่งคำค้นหา (Query) ไปยังเครื่องมือ DataFile ให้ส่งเฉพาะตัวอักษรเท่านั้น ห้ามใส่เครื่องหมายวรรคตอน เครื่องหมายคำพูด หรือการขึ้นบรรทัดใหม่"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        272,
+        320
+      ],
+      "id": "08cbce0b-986b-413a-94ee-e35387e74743",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        576
+      ],
+      "id": "1bac0c6b-ce4a-4b42-ab45-1d8f9eed8e35",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        208,
+        560
+      ],
+      "id": "59bb1cd8-a956-4941-a88f-282b79c46a5d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "LOgFbrT3snzPAAxZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger1').item.json.message.chat }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        752,
+        320
+      ],
+      "id": "7b2a23b9-dc90-473e-a63d-603a80cdc979",
+      "name": "Send a text message",
+      "webhookId": "5ca51acb-13ac-487a-9f96-88dfbc8c9473",
+      "credentials": {
+        "telegramApi": {
+          "id": "yb7HPpakZ1FQuPaJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -32,
+        320
+      ],
+      "id": "85e68621-74cd-434e-a72a-6f692ef92bca",
+      "name": "Telegram Trigger1",
+      "webhookId": "e60cf815-834d-47a1-be9f-95e8f5a8563e",
+      "credentials": {
+        "telegramApi": {
+          "id": "yb7HPpakZ1FQuPaJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        { \"text\": \"{{ $fromAI(\"query\",\"the question the user needs an answer to\") }}\" }\n      ]\n    }\n  ],\n  \"tools\": [\n    {\n      \"file_search\": {\n        \"file_search_store_names\": [\n          \"fileSearchStores/fluken8n-mpjmuy7uz3vp\"\n        ]\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        448,
+        576
+      ],
+      "id": "47c4c6fb-e0e7-4363-bcd7-202f2b294005",
+      "name": "DataFile",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "3Cc0Erag5QFBs9vQ",
+          "name": "Query Auth Gemini File Search"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Upload File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload File": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DataFile": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "412617ae-6f24-457c-b007-7b93a0a2791e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e287b23bce9ab1df2386ee2df2eace978549e7a0c1baab70fc913fabb4c24b55"
+  },
+  "id": "JjY_MXy370Aqz_kUADgpq",
+  "tags": []
+}

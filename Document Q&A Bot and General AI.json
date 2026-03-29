@@ -1,0 +1,488 @@
+{
+  "name": "Document Q&A Bot and General AI",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Upload File to Gemini File Search",
+        "formFields": {
+          "values": [
+            {
+              "fieldName": "Upload_File",
+              "fieldLabel": "Upload File",
+              "fieldType": "file",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.4,
+      "position": [
+        -144,
+        16
+      ],
+      "id": "93a85c04-267e-4b76-ae4d-ec910f23a7cc",
+      "name": "On form submission",
+      "webhookId": "366539f8-b4bb-4ac3-b188-0a34347b680d"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/upload/v1beta/files",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "Upload_File",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        96,
+        16
+      ],
+      "id": "595c1437-bf58-416d-9b7d-a41d93103eae",
+      "name": "Upload File",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "3Cc0Erag5QFBs9vQ",
+          "name": "Query Auth Gemini File Search"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/fileSearchStores/fluken8n-mpjmuy7uz3vp:importFile",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file_name",
+              "value": "={{ $json.file.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        320,
+        16
+      ],
+      "id": "077f909e-6e39-4b43-8a73-3021735e2538",
+      "name": "Import to File Search",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "3Cc0Erag5QFBs9vQ",
+          "name": "Query Auth Gemini File Search"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -192,
+        512
+      ],
+      "id": "f10b401e-ed27-46ef-ac65-abb4b35d64f2",
+      "name": "Telegram Trigger",
+      "webhookId": "e60cf815-834d-47a1-be9f-95e8f5a8563e",
+      "credentials": {
+        "telegramApi": {
+          "id": "yb7HPpakZ1FQuPaJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "คุณคือ RAG agent ที่ช่วยตอบคำถามจากเอกสาร\n\nหน้าที่: ใช้เครื่องมือ DataFile เพื่อค้นหาคำตอบจากเอกสารที่อัปโหลดไว้\n\nกฎ:\n1. ใช้ DataFile ทุกครั้งเพื่อค้นหาข้อมูล\n2. ระบุแหล่งที่มา (ชื่อไฟล์ + เลขหน้า) เสมอ\n3. ถ้าไม่พบข้อมูล ให้บอกว่า \"ไม่พบข้อมูลในเอกสาร\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        352,
+        224
+      ],
+      "id": "ab4d1c76-f99e-4030-9d0b-253e7985ba67",
+      "name": "AI Agent (Document)"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "คุณคือ AI Assistant ที่เป็นมิตรและช่วยเหลือดี\n\nหน้าที่: ตอบคำถามทั่วไปของผู้ใช้อย่างเป็นธรรมชาติ\n\nกฎ:\n1. ตอบอย่างเป็นธรรมชาติและเป็นมิตร\n2. ให้ข้อมูลที่ถูกต้องและเป็นประโยชน์\n3. ถ้าไม่แน่ใจ ให้บอกตามตรง\n\nห้าม: อ้างถึง RAG, เอกสาร, หรือไฟล์ใดๆ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        352,
+        640
+      ],
+      "id": "10f094e0-e501-4d44-8454-fa412d2f16dc",
+      "name": "AI Agent (General)"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        272,
+        480
+      ],
+      "id": "67407d42-9ae0-42d4-bd03-afd8152c6e17",
+      "name": "Google Gemini (Document)",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "LOgFbrT3snzPAAxZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        320,
+        864
+      ],
+      "id": "e5196d33-974e-4f48-bbe8-be9c3bb9354b",
+      "name": "Google Gemini (General)",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "LOgFbrT3snzPAAxZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        432,
+        480
+      ],
+      "id": "0c49b984-cf6b-4724-8ce7-0b8ef79cda92",
+      "name": "Memory (Document)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        { \"text\": \"{{ $fromAI(\"query\",\"the question the user needs an answer to\") }}\" }\n      ]\n    }\n  ],\n  \"tools\": [\n    {\n      \"file_search\": {\n        \"file_search_store_names\": [\n          \"fileSearchStores/fluken8n-mpjmuy7uz3vp\"\n        ]\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        592,
+        480
+      ],
+      "id": "4ab37501-ac18-4398-8cf0-94bcf657710e",
+      "name": "DataFile",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "3Cc0Erag5QFBs9vQ",
+          "name": "Query Auth Gemini File Search"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1104,
+        480
+      ],
+      "id": "5ea94541-cce9-4de2-b696-ec5f76a34819",
+      "name": "Send Message",
+      "webhookId": "e9473ae3-98b2-4f5c-8a1e-84fadb57ed6c",
+      "credentials": {
+        "telegramApi": {
+          "id": "yb7HPpakZ1FQuPaJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "90f9fbd4-ddac-49b9-9e41-c4b412ac182c",
+              "leftValue": "=={{ $json.message.text }}",
+              "rightValue": "(เอกสาร|ไฟล์|หน้า|สรุป|อธิบาย|PDF|DOCX|doc|file|document|page|summarize|explain)",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        16,
+        512
+      ],
+      "id": "4a1b9079-37a2-4c04-a934-5b70233ac43a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        864
+      ],
+      "id": "1aaad763-427f-462a-90c8-fe74c5f18457",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/fileSearchStores",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "conrent-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "displayName",
+              "value": "fluken8n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        96,
+        -208
+      ],
+      "id": "b8e3f5d1-6147-461a-95e1-aae6d89fd5bb",
+      "name": "Create File Search Store",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "3Cc0Erag5QFBs9vQ",
+          "name": "Query Auth Gemini File Search"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Upload File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload File": {
+      "main": [
+        [
+          {
+            "node": "Import to File Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent (Document)": {
+      "main": [
+        [
+          {
+            "node": "Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent (General)": {
+      "main": [
+        [
+          {
+            "node": "Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini (Document)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent (Document)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini (General)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent (General)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory (Document)": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent (Document)",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DataFile": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent (Document)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI Agent (Document)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent (General)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent (General)",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "bad30abe-45be-40ba-9cc7-d9fd7a9f2d14",
+  "meta": {
+    "instanceId": "e287b23bce9ab1df2386ee2df2eace978549e7a0c1baab70fc913fabb4c24b55"
+  },
+  "id": "cdBmrZUzP4L0BlcWuMRXl",
+  "tags": []
+}
